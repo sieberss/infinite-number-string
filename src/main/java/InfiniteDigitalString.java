@@ -1,100 +1,111 @@
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 public class InfiniteDigitalString {
 
+    public static void main(String[] args) {
+        long pos = findPosition("3446");
+        System.out.println("pos: " + pos);
+        System.out.println("rotate ");
+    }
+
+    public static long getRotatedValue(String s){
+        long result = Long.MAX_VALUE;
+        for (int i=0; i< s.length(); i++){
+            if (s.charAt(i) != '0'){
+                String rotated = s.substring(i) + s.substring(0, i);
+                long value = Long.parseLong(rotated);
+                if ((rotated + (value+1) ) .contains(s))
+                    result = Math.min(result, Long.parseLong(rotated));
+            }
+        }
+        return result;
+    }
+
     public static long findPosition(final String s) {
+        long result = Long.MAX_VALUE; //
+        String upto1004 = IntStream.range(1, 1005).mapToObj(Integer::toString).collect(Collectors.joining());
+        int index1004 = upto1004.indexOf(s);
+        /** case 1: found number in string of 1 to 1004 */
+        if (index1004 != -1) return index1004;
+        /** case 2: search for series of numbers in s. Save this index and wait if it can be further reduced. */
+        long seriesIndex = findIndexForSeries(s);
+        if (seriesIndex != -1) 
+            result = seriesIndex;
+        /** case 3: move of leading nines to the end may find lower number */
+        result = getManipulationResult(getLeadingNinesValue(s), s, result);
+        /** case 4: rotation of number may find lower index */
+        result = getManipulationResult(getRotatedValue(s), s, result);
+        /** case 5: when start and end digits are equal, may belong to two successive numbers */
+        result = getManipulationResult(getBeginEqualsEndValue(s), s, result);
+        /** case 6: start 1 lower than end, start can be end of lower number */
+        result = getManipulationResult(getBeginOneLowerThanEndValue(s), s, result);
+        /** case 7 : leading nines can be end of lower number */
+        result = getManipulationResult(getLeadingNinesValue(s), s, result);
+        return result;
+    }
+
+    public static long getLeadingNinesValue(String s) {
+        String nines = getLeadingNines(s);
+        if (nines.isEmpty())
+            // no leading nines
+            return Long.MAX_VALUE;
+        int nineCount = nines.length();
+        String end = s.substring(nineCount);
+        if (end.isEmpty() || end.charAt(0) == '0'){
+            // one nine must remain at beginning
+            nines = nines.substring(1);
+            nineCount--;
+            end = "9" + end;
+        }
+        if (nines.isEmpty())
+            // no nine left to shift to end
+            return Long.MAX_VALUE;
+        long endValue = Long.parseLong(end);
+        int remainingNines = nineCount;
+        // omit zeros at end if covered by nines at beginning (
+        while (endValue % 10 == 0 && remainingNines > 0){
+            endValue /= 10;
+            remainingNines--;
+        }
+        end = Long.toString(endValue - 1);
+        // number with nines at the end is followed by number without these nines
+        return Long.parseLong(end + nines);
+    }
+
+    private static String getLeadingNines(String s) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < s.length() && s.charAt(i) == '9'; i++)
+            result.append("9");
+        return result.toString();
+    }
+
+    private static long getManipulationResult(long cuttedValue, String s, long result) {
+        int pos;
+        if (cuttedValue != Long.MAX_VALUE) {
+            pos = getIndexInSeries(cuttedValue, cuttedValue + 1, s);
+            long indexAfterRepetitionHandling = getNumberIndex(cuttedValue) + pos;
+            if (indexAfterRepetitionHandling < result)
+                return indexAfterRepetitionHandling;
+        }
+        return result;
+    }
+
+    private static long findIndexForSeries(String s) {
         int l = s.length();
-        if (l == 0) return 0;  // empty string
-        long value = Long.parseLong(s);
-
-        // zeros only, then s appears first in 1000..., position is 1 after index of that number
-        if (value == 0){
-            value = Long.parseLong("1" + s);
-            return getNumberIndex(value) + 1;
-        }
-
-        /** single digit numbers are easy to find */
-        if (l == 1) {
-            return value - 1;
-        }
-
-        /* nines only: 99..9 can be constructed from 89..9 and 90..0.
-          Position is 1 after index of 89..9  */
-        if (Long.valueOf(value + 1).toString().length() > l){
-            value -= (value + 1) / 10;
-            return getNumberIndex(value) + 1;
-        }
-
-        int digits = 1;
+        int digits = 4;  // start with 4 digit numbers, as lower have been checked at start
         long position = -1;
         while (digits < l && position == -1){
             System.out.println(position + " " + digits);
             // check if s can be constructed by a series of numbers with fewer digits
-            position = findPosition(s, digits);
+            position = findIndexForSeries(s, digits);
             digits++;
         }
-
-        // found s in series: return result
-        if (position != -1) return position;
-
-        return getPositionAfterTreatingLeadingZeros(s, value);
+        // either loop terminated earlier or position is still -1
+        return position;
     }
 
-
-
-    public static long getPositionAfterTreatingLeadingZeros(String s, long value){
-        int end = s.length() - 1;
-
-        // count leading zeros
-        int leading = 0;
-        while (s.charAt(leading) == '0'){
-            leading++;
-        }
-
-        // count trailing zeros, either at end or before a 1 at the end
-        boolean endsWith1 = s.charAt(end) == '1';
-        int trailing = 0;
-        if (endsWith1) end--;
-        while (end >= trailing && s.charAt(end - trailing) == '0') {
-            trailing++;
-        }
-
-      /* determine what digits have to be added in order to make
-        leading 0..00 matched by trailing 0..01 */
-        int zerosToAdd = 0;
-        boolean oneToAdd = false;
-        if (!endsWith1 && leading > 0 && leading >= trailing) {
-            zerosToAdd = (leading > trailing) ? leading - trailing - 1 : 0;
-            oneToAdd = true;
-        }
-        if (endsWith1) {
-            if (trailing + 1 < leading || leading == s.length() - 1) {
-                // trailing 0..01 does not cover leading 00..00, have to add 00..01
-                zerosToAdd = leading - 1;
-                oneToAdd = true;
-            }
-            else { // leading 0..00 covered by trailing 0..01
-                zerosToAdd = 0;
-                oneToAdd = false;
-            }
-        }
-        /* change value according to added digits*/
-        for (int i = 0; i < zerosToAdd; i++)
-            value *= 10;
-        if (oneToAdd)
-            value = 10 * value;
-        System.out.println("Value is : " + value);
-
-        /* calculate position of the modified value */
-        long numberIndex = getNumberIndex(value);
-        if (leading == 0)
-            // s equal to value representation
-            return numberIndex;
-        else
-            // value ends with last leading 0
-            return numberIndex + Long.toString(value).length() - leading;
-
-    }
-
-    public static long findPosition(String s, int digits){
+    public static long findIndexForSeries(String s, int digits){
         long value;
         String part;
         long position = -1;
@@ -108,12 +119,11 @@ public class InfiniteDigitalString {
             if (s.charAt(i) == '0')
                 // this cannot be the start of an n digit number
                 continue;
-
             // build potential number series and check if s is contained
             long start = (i == 0) ? value : value - 1;
             long end = start + s.length() / digits;
             int seriesPosition = getIndexInSeries(start, end, s);
-            System.out.printf("s: %s, start: %d, end: %d, position: %d \n", s, start, end, seriesPosition);
+            //System.out.printf("s: %s, start: %d, end: %d, position: %d \n", s, start, end, seriesPosition);
             if (seriesPosition != -1)
                 return getNumberIndex(start) + seriesPosition;
         }
@@ -145,17 +155,119 @@ public class InfiniteDigitalString {
             digits++;
             factor *= 10;
         }
-        System.out.printf("oldindex: %d, result: %d, factor: %d, digits: %d \n", oldIndex, result, factor, digits);
-        return result == curIndex ? factor -1: (result - oldIndex) / (digits -1) + factor / 10 ;
+        //System.out.printf("oldindex: %d, result: %d, factor: %d, digits: %d \n", oldIndex, result, factor, digits);
+        return (result - oldIndex) / (digits -1) + factor / 10 ;
     }
 
-    /* checks if the string represenation of the number series contains the input string
+    /* checks if the string representation of the number series contains the input string
     and returns its position*/
     public static int getIndexInSeries(long from, long to, String input){
         StringBuilder sb = new StringBuilder();
         for (long number = from; number <= to; number++){
-            sb.append(Long.toString(number));
+            sb.append(number);
         }
         return sb.toString().indexOf(input);
     }
+
+    public static String getCommonBeginAndEnd(String s){
+        String common = "";
+        int l = s.length();
+        for (int i = 1; i * 2 < l; i++){
+            String begin = s.substring(0, i);
+            String middle = s.substring(i, l-i);
+            String end = s.substring(l-i);
+            if (begin.equals(end) && !onlyNines(middle))
+                common = begin;
+        }
+        return common;
+    }
+
+    public static String getBeginOneLowerThanEnd(String s){
+        String result = "";
+        int l = s.length();
+        for (int i = 1; i * 2 < l; i++){
+            String begin = s.substring(0, i);
+            String end = s.substring(l-i);
+            if (Long.parseLong(end) - Long.parseLong(begin) == 1) {
+                result = begin;
+            }
+        }
+        return result;
+    }
+
+    public static long getBeginEqualsEndValue(String number) {
+        String begin = getCommonBeginAndEnd(number);
+        if (begin.isEmpty())
+            // different begin and end, so no cut possible
+        {
+            return Long.MAX_VALUE;
+        }
+        int length = number.length();
+        int beginLength = begin.length();
+        String middle = number.substring(beginLength, length - beginLength);
+        String newNumber = begin + middle;
+        long value = Long.MAX_VALUE;
+        for (int i = 0; i < newNumber.length(); i++) {
+            if (newNumber.charAt(0) != '0' && successorMatches(newNumber, number))
+                value = Math.min(value, Long.parseLong(newNumber));
+            newNumber = newNumber.substring(1) + newNumber.charAt(0);
+        }
+        return value;
+    }
+
+    private static boolean successorMatches(String part, String number) {
+        String successor;
+        long value;
+        if (part.charAt(0) == '0') {
+            value = Long.parseLong("1" + part);
+            successor = Long.toString(value + 1).substring(1);
+        }
+        else {
+            value = Long.parseLong(part);
+            successor = Long.toString(value + 1);
+        }
+        return (part + successor).contains(number);
+    }
+
+    public static long getBeginOneLowerThanEndValue(String number) {
+        String begin = getBeginOneLowerThanEnd(number);
+        int length = number.length();
+        int beginLength = begin.length();
+        String middle = number.substring(beginLength, length - beginLength);
+        String nines = getLeadingNines(middle);
+        int ninesCount = nines.length();
+        if (begin.isEmpty() || middle.charAt(0) == '0')
+            // no match or number would begin with 0, so no cut possible
+            return Long.MAX_VALUE;
+        // one nine must stay if new number would start with 0 (0 after nines or no digits left)
+        if (number.charAt(beginLength + ninesCount) == '0'
+                || (number.charAt(0) == '0' && nines.equals(middle)) ) {
+            nines = nines.substring(1);
+        }
+        String toMove = begin + nines;
+        String newNumber = number.substring(toMove.length(), length - begin.length()) + toMove;
+        return Long.parseLong(newNumber);
+    }
+
+    private static boolean onlyNines(String number) {
+        for (int i = 0; i < number.length(); i++){
+            if (number.charAt(i) != '9')
+                return false;
+        }
+        return true;
+    }
+
+    public static long getValueForEqualDigits(String number) {
+        if (number.charAt(0) == '9')
+            // 99999 is found at 99989-99990
+            return Long.parseLong(number.substring(1) + '0');
+        if (number.charAt(0) == '0')
+            return Long.parseLong('1' + number);
+        else {
+            /* if length is odd, last digit of longer half is invisible and can be grow: 33333 as 333-334.
+            If length is even, both halfs would be visible, so another digit is needed: 2222 as 222-223 */
+            return Long.parseLong(number.substring(0, (number.length() / 2) + 1));
+        }
+    }
+
 }
