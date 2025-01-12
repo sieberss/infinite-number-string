@@ -7,6 +7,8 @@ public class InfiniteDigitalStringTest {
 
     private static Object[][] DATA = new Object[][] {
 
+            new Object[] {"71862056081",       1564739360L,       "186205607-186205608-18"},
+            new Object[] {"071417",       27452L,       "7140-7141"},
             new Object[] {"0910",       2927L,       "1009-1010"},
             new Object[] {"456",        3L,          "...3456..."},
             new Object[] {"454",        79L,         "...444546..."},
@@ -61,14 +63,7 @@ public class InfiniteDigitalStringTest {
         assertEquals(1009, InfiniteDigitalString.getRotatedValue("0910"));
     }
 
-    @Test
-    public void getValueForEqualDigits_test(){
-        assertEquals(999990, InfiniteDigitalString.getValueForEqualDigits("999999"));
-        assertEquals(990, InfiniteDigitalString.getValueForEqualDigits("999"));
-        assertEquals(90, InfiniteDigitalString.getValueForEqualDigits("99"));
-        assertEquals(222, InfiniteDigitalString.getValueForEqualDigits("2222"));
-        assertEquals(222, InfiniteDigitalString.getValueForEqualDigits("22222"));
-    }
+
     @Test
     public void getBeginEqualsEnd_Value_test() {
         // common part must be at the beginning, middle part must not be 9 only
@@ -122,6 +117,8 @@ public class InfiniteDigitalStringTest {
 
     @Test
     public void getValueToIndex_test(){
+        assertEquals(7140L, InfiniteDigitalString.getValueToIndex(27452L));
+        assertEquals(186205607L, InfiniteDigitalString.getValueToIndex(1564739360L));
         assertEquals(17340063L, InfiniteDigitalString.getValueToIndex(127609398L));
         assertEquals(102420585574L, InfiniteDigitalString.getValueToIndex(1117935915782L));
         assertEquals(1734063, InfiniteDigitalString.getValueToIndex(11027334L));

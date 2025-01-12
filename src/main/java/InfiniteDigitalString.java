@@ -3,10 +3,27 @@ import java.util.stream.IntStream;
 
 public class InfiniteDigitalString {
 
-    public static void main(String[] args) {
-        long pos = findPosition("3446");
-        System.out.println("pos: " + pos);
-        System.out.println("rotate ");
+    public static long findPosition(final String s) {
+        long result = Long.MAX_VALUE; //
+        String upto1004 = IntStream.range(1, 1005).mapToObj(Integer::toString).collect(Collectors.joining());
+        int index1004 = upto1004.indexOf(s);
+        /** case 1: found number in string of 1 to 1004 */
+        if (index1004 != -1) return index1004;
+        /** case 2: search for series of numbers in s. Save this index and wait if it can be further reduced. */
+        long seriesIndex = findIndexForSeries(s);
+        if (seriesIndex != -1)
+            result = seriesIndex;
+        /** case 3: move of leading nines to the end may find lower number */
+        result = getManipulationResult(getLeadingNinesValue(s), s, result);
+        /** case 4: rotation of number may find lower index */
+        result = getManipulationResult(getRotatedValue(s), s, result);
+        /** case 5: when start and end digits are equal, may belong to two successive numbers */
+        result = getManipulationResult(getBeginEqualsEndValue(s), s, result);
+        /** case 6: start 1 lower than end, start can be end of lower number */
+        result = getManipulationResult(getBeginOneLowerThanEndValue(s), s, result);
+        /** case 7 : leading nines can be end of lower number */
+        result = getManipulationResult(getLeadingNinesValue(s), s, result);
+        return result;
     }
 
     public static long getRotatedValue(String s){
@@ -19,29 +36,6 @@ public class InfiniteDigitalString {
                     result = Math.min(result, Long.parseLong(rotated));
             }
         }
-        return result;
-    }
-
-    public static long findPosition(final String s) {
-        long result = Long.MAX_VALUE; //
-        String upto1004 = IntStream.range(1, 1005).mapToObj(Integer::toString).collect(Collectors.joining());
-        int index1004 = upto1004.indexOf(s);
-        /** case 1: found number in string of 1 to 1004 */
-        if (index1004 != -1) return index1004;
-        /** case 2: search for series of numbers in s. Save this index and wait if it can be further reduced. */
-        long seriesIndex = findIndexForSeries(s);
-        if (seriesIndex != -1) 
-            result = seriesIndex;
-        /** case 3: move of leading nines to the end may find lower number */
-        result = getManipulationResult(getLeadingNinesValue(s), s, result);
-        /** case 4: rotation of number may find lower index */
-        result = getManipulationResult(getRotatedValue(s), s, result);
-        /** case 5: when start and end digits are equal, may belong to two successive numbers */
-        result = getManipulationResult(getBeginEqualsEndValue(s), s, result);
-        /** case 6: start 1 lower than end, start can be end of lower number */
-        result = getManipulationResult(getBeginOneLowerThanEndValue(s), s, result);
-        /** case 7 : leading nines can be end of lower number */
-        result = getManipulationResult(getLeadingNinesValue(s), s, result);
         return result;
     }
 
@@ -121,9 +115,8 @@ public class InfiniteDigitalString {
                 continue;
             // build potential number series and check if s is contained
             long start = (i == 0) ? value : value - 1;
-            long end = start + s.length() / digits;
+            long end = start + s.length() / digits + 1;
             int seriesPosition = getIndexInSeries(start, end, s);
-            //System.out.printf("s: %s, start: %d, end: %d, position: %d \n", s, start, end, seriesPosition);
             if (seriesPosition != -1)
                 return getNumberIndex(start) + seriesPosition;
         }
@@ -155,7 +148,6 @@ public class InfiniteDigitalString {
             digits++;
             factor *= 10;
         }
-        //System.out.printf("oldindex: %d, result: %d, factor: %d, digits: %d \n", oldIndex, result, factor, digits);
         return (result - oldIndex) / (digits -1) + factor / 10 ;
     }
 
@@ -199,9 +191,7 @@ public class InfiniteDigitalString {
         String begin = getCommonBeginAndEnd(number);
         if (begin.isEmpty())
             // different begin and end, so no cut possible
-        {
             return Long.MAX_VALUE;
-        }
         int length = number.length();
         int beginLength = begin.length();
         String middle = number.substring(beginLength, length - beginLength);
@@ -255,19 +245,6 @@ public class InfiniteDigitalString {
                 return false;
         }
         return true;
-    }
-
-    public static long getValueForEqualDigits(String number) {
-        if (number.charAt(0) == '9')
-            // 99999 is found at 99989-99990
-            return Long.parseLong(number.substring(1) + '0');
-        if (number.charAt(0) == '0')
-            return Long.parseLong('1' + number);
-        else {
-            /* if length is odd, last digit of longer half is invisible and can be grow: 33333 as 333-334.
-            If length is even, both halfs would be visible, so another digit is needed: 2222 as 222-223 */
-            return Long.parseLong(number.substring(0, (number.length() / 2) + 1));
-        }
     }
 
 }
