@@ -5,8 +5,10 @@ import org.junit.Test;
 public class InfiniteDigitalStringTest {
 
 
-    private static Object[][] DATA = new Object[][] {
+    private static final Object[][] DATA = new Object[][] {
 
+            new Object[] {"0000", 38890L, "10000-10001"},
+            new Object[] {"00001", 38890L, "10000-10001"},
             new Object[] {"71862056081",       1564739360L,       "186205607-186205608-18"},
             new Object[] {"071417",       27452L,       "7140-7141"},
             new Object[] {"0910",       2927L,       "1009-1010"},
@@ -113,6 +115,7 @@ public class InfiniteDigitalStringTest {
         assertEquals(15049, InfiniteDigitalString.getNumberIndex(4040L));
         assertEquals(1000000071L, InfiniteDigitalString.getNumberIndex(123456798L));
         assertEquals(11234568689L, InfiniteDigitalString.getNumberIndex(1234567980L));
+        assertEquals(38889, InfiniteDigitalString.getNumberIndex(10000));
     }
 
     @Test
@@ -138,21 +141,6 @@ public class InfiniteDigitalStringTest {
         assertEquals(1234567980L, InfiniteDigitalString.getValueToIndex(11234568689L));
         assertEquals(2578606258L, InfiniteDigitalString.getValueToIndex(24674951477L));
         assertEquals(3536L, InfiniteDigitalString.getValueToIndex(13034L));
-    }
-
-    @Test
-    public void twoNumbersWithSameIndex_test(){
-
-        long a = 306193912L;
-        System.out.println(a);
-        long b = InfiniteDigitalString.getNumberIndex(a);
-        System.out.println(b);
-        System.out.println(InfiniteDigitalString.getValueToIndex(b));
-        a = 1234567980L;
-        System.out.println(a);
-        b = InfiniteDigitalString.getNumberIndex(a);
-        System.out.println(b);
-        System.out.println(InfiniteDigitalString.getValueToIndex(b));
     }
 
 

@@ -9,12 +9,15 @@ public class InfiniteDigitalString {
         int index1004 = upto1004.indexOf(s);
         /** case 1: found number in string of 1 to 1004 */
         if (index1004 != -1) return index1004;
-        /** case 2: search for series of numbers in s. Save this index and wait if it can be further reduced. */
+        /** case 2: zeros only */
+        result = getManipulationResult(getZerosOnlyValue(s), s, result);
+        if (result != Long.MAX_VALUE) {
+            return result;
+        }
+        /** case 3: search for series of numbers in s. Save this index and wait if it can be further reduced. */
         long seriesIndex = findIndexForSeries(s);
         if (seriesIndex != -1)
             result = seriesIndex;
-        /** case 3: move of leading nines to the end may find lower number */
-        result = getManipulationResult(getLeadingNinesValue(s), s, result);
         /** case 4: rotation of number may find lower index */
         result = getManipulationResult(getRotatedValue(s), s, result);
         /** case 5: when start and end digits are equal, may belong to two successive numbers */
@@ -37,6 +40,13 @@ public class InfiniteDigitalString {
             }
         }
         return result;
+    }
+
+    public static long getZerosOnlyValue(String s){
+        if (Long.parseLong(s) == 0)
+            // String of n 0s appears first in 10^n
+            return Long.parseLong("1" + s);
+        else return Long.MAX_VALUE;
     }
 
     public static long getLeadingNinesValue(String s) {
@@ -74,15 +84,15 @@ public class InfiniteDigitalString {
         return result.toString();
     }
 
-    private static long getManipulationResult(long cuttedValue, String s, long result) {
+    private static long getManipulationResult(long manipulatedValue, String s, long oldResult) {
         int pos;
-        if (cuttedValue != Long.MAX_VALUE) {
-            pos = getIndexInSeries(cuttedValue, cuttedValue + 1, s);
-            long indexAfterRepetitionHandling = getNumberIndex(cuttedValue) + pos;
-            if (indexAfterRepetitionHandling < result)
-                return indexAfterRepetitionHandling;
+        if (manipulatedValue != Long.MAX_VALUE) {
+            pos = getIndexInSeries(manipulatedValue, manipulatedValue + 1, s);
+            long indexAfterManipulation = getNumberIndex(manipulatedValue) + pos;
+            if (indexAfterManipulation < oldResult)
+                return indexAfterManipulation;
         }
-        return result;
+        return oldResult;
     }
 
     private static long findIndexForSeries(String s) {
@@ -90,7 +100,6 @@ public class InfiniteDigitalString {
         int digits = 4;  // start with 4 digit numbers, as lower have been checked at start
         long position = -1;
         while (digits < l && position == -1){
-            System.out.println(position + " " + digits);
             // check if s can be constructed by a series of numbers with fewer digits
             position = findIndexForSeries(s, digits);
             digits++;
@@ -102,7 +111,6 @@ public class InfiniteDigitalString {
     public static long findIndexForSeries(String s, int digits){
         long value;
         String part;
-        long position = -1;
         for (int i = 0; i < digits && i + digits <= s.length(); i++){
             part = s.substring(i, i + digits);
             value = Long.parseLong(part);
@@ -120,7 +128,7 @@ public class InfiniteDigitalString {
             if (seriesPosition != -1)
                 return getNumberIndex(start) + seriesPosition;
         }
-        return position;
+        return -1;
     }
 
     /* gets the index in the infinite string where the provided number is placed */
